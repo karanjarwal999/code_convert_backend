@@ -62,20 +62,27 @@ app.get('/auth/github/callback',
   }
 );
 
-app.get('/repos', (req, res) => {
-  const accessToken = req.user.accessToken;
-  axios.get('https://api.github.com/user/repos', {
+router.get('/getAccessToken', async (req, res) => {
+  try {
+    const { code } = req.body;
+    const response = await axios.post(`https://github.com/login/oauth/access_token`, null, {
+      params: {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code: code,
+        redirect_uri: process.env.redirect_uri,
+      },
       headers: {
-          Authorization: `Bearer ${accessToken}`
+        Accept: 'application/json'
       }
-  })
-  .then(response => {
-      res.json(response.data);
-  })
-  .catch(error => {
-      res.status(500).send('Error fetching repositories');
-  });
+    });
 
+    const accessToken = response.data.access_token;
+    res.json({ accessToken });
+  } catch (error) {
+    console.error('Error exchanging code for access token:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 // Start the server
