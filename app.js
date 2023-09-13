@@ -24,6 +24,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Define routes
+console.log(1)
 app.get('/',(req,res)=>{
     res.send('Code converter api ')
 })
@@ -33,7 +34,7 @@ app.post('/code-converter', CodeConverter);
 app.post('/debug',CodeDebuger);
 
 app.post('/quality-check', CodeQualityChecker);
-
+console.log(2)
 passport.use(new GitHubStrategy({
   clientID: process.env.GITHUB_CLIENT_ID,
   clientSecret: process.env.GITHUB_CLIENT_SECRET,
@@ -42,7 +43,7 @@ passport.use(new GitHubStrategy({
   // Store user data in session or database
   return done(null, profile);
 }));
-
+console.log(3)
 passport.serializeUser((user, done) => {
   done(null, user);
 });
@@ -50,7 +51,7 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
-
+console.log(4)
 app.get('/auth/github', passport.authenticate('github'));
 app.get('/auth/github/callback',
   passport.authenticate('github', { failureRedirect: '/' }),
