@@ -62,7 +62,7 @@ app.get('/auth/github/callback',
   }
 );
 
-router.get('/getAccessToken', async (req, res) => {
+app.post('/getAccessToken', async (req, res) => {
   try {
     const { code } = req.body;
     const response = await axios.post(`https://github.com/login/oauth/access_token`, null, {
