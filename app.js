@@ -2,15 +2,26 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { openai } = require('openai');
 require('dotenv').config();
-var cors = require('cors');
 const CodeConverter = require('./routes/codeConverter');
 const CodeDebuger = require('./routes/debug');
 const CodeQualityChecker = require('./routes/quality_checker');
 const app = express();
+var cors = require('cors');
+
+const session = require('express-session');
+const passport = require('passport');
+const GitHubStrategy = require('passport-github').Strategy;
+const { v4: uuidv4 } = require('uuid');
+
+// const sessionSecret = uuidv4();
+// console.log(sessionSecret);
 
 app.use(bodyParser.json());
 app.use(cors())
 
+app.use(session({ secret: process.env.SESSION_SECRET, resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Define routes
 app.get('/',(req,res)=>{
@@ -22,6 +33,31 @@ app.post('/code-converter', CodeConverter);
 app.post('/debug',CodeDebuger);
 
 app.post('/quality-check', CodeQualityChecker);
+
+passport.use(new GitHubStrategy({
+  clientID: process.env.GITHUB_CLIENT_ID,
+  clientSecret: process.env.GITHUB_CLIENT_SECRET,
+  callbackURL: process.env.CALLBACK_URL
+}, (accessToken, refreshToken, profile, done) => {
+  // Store user data in session or database
+  return done(null, profile);
+}));
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
+app.get('/auth/github', passport.authenticate('github'));
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/' }),
+  (req, res) => {
+    res.redirect('/'); // Redirect to the dashboard or code conversion page
+  }
+);
 
 // Start the server
 app.listen(8080, () => {
