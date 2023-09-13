@@ -17,7 +17,10 @@ const { v4: uuidv4 } = require('uuid');
 // console.log(sessionSecret);
 
 app.use(bodyParser.json());
-app.use(cors())
+const corsOptions = {
+  origin: 'http://localhost:3000', // Replace with your frontend's port
+};
+app.use(cors(corsOptions));
 
 app.use(session({ secret: process.env.SESSION_SECRET, resave: true, saveUninitialized: true }));
 app.use(passport.initialize());
@@ -72,7 +75,7 @@ app.get('/repos', (req, res) => {
   .catch(error => {
       res.status(500).send('Error fetching repositories');
   });
-  
+
 });
 
 // Start the server
