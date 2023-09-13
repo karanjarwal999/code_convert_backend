@@ -17,10 +17,7 @@ const { v4: uuidv4 } = require('uuid');
 // console.log(sessionSecret);
 
 app.use(bodyParser.json());
-const corsOptions = {
-  origin: 'http://localhost:3000', // Replace with your frontend's port
-};
-app.use(cors(corsOptions));
+app.use(cors());
 
 app.use(session({ secret: process.env.SESSION_SECRET, resave: true, saveUninitialized: true }));
 app.use(passport.initialize());
