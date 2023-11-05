@@ -4,7 +4,6 @@ from routes.Pdf_reader import gethub_callback, Pdf_Question
 from flask import Flask, request, jsonify,redirect
 from dotenv import load_dotenv, find_dotenv
 from flask_cors import CORS
-import requests
 import os
 import sys
 

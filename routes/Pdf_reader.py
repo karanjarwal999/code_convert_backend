@@ -1,7 +1,6 @@
 from flask import jsonify,redirect
 import requests
 import os
-import shutil
 
 #  for pdf reader
 import openai
