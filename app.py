@@ -1,16 +1,20 @@
 # app.py
-import os
-from code_converter import convert_code , debug_code , check_quality , add_css_prefixer
+from routes.code_converter import convert_code , debug_code , check_quality , add_css_prefixer
+from routes.Pdf_reader import gethub_callback, Pdf_Question
 from flask import Flask, request, jsonify,redirect
 from dotenv import load_dotenv, find_dotenv
 from flask_cors import CORS
 import requests
-import json
+import os
+import sys
 
 app = Flask(__name__)
 CORS(app)
 
 load_dotenv(find_dotenv())
+
+sys.path.append('../..')
+sys.stdout.reconfigure(encoding='utf-8')
 
 @app.route('/')
 def home_page():
@@ -58,41 +62,46 @@ def login():
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
-
-    response = requests.post(os.environ.get("GITHUB_TOKEN_URL"), data={
-        'client_id': os.environ.get("GITHUB_CLIENT_ID"),
-        'client_secret': os.environ.get("GITHUB_CLIENT_SECRET"),
-        'code': code,
-        'redirect_uri': os.environ.get("GITHUB_REDIRECT_URI")
-    }, headers={'Accept': 'application/json'})
-
-    if response.status_code == 200:
-        access_token = response.json()['access_token']
-        # print(os.environ.get('FRONTEND_URL'))
-        return redirect(f"{os.environ.get('FRONTEND_URL')}?token={access_token}")
-    else:
-        return 'Error fetching access token', 400
+    return gethub_callback(code)
 
 
-@app.route('/get_file_content', methods=['POST'])
-def get_file():
+@app.route('/PDF_QA', methods=['POST'])
+def PDF_QA():
     data = request.get_json()
-    username,repo_name,file_path,branch,isprivate = data.values()
-    if not isprivate:
-        try:
-            raw_url = f'https://raw.githubusercontent.com/{username}/{repo_name}/{branch}/{file_path}'
-            print(raw_url)
-            response = requests.get(raw_url)
+    api_key,question = data.values()
+    return Pdf_Question(api_key,question)
 
-            if response.status_code == 200:
-                content = response.text
-                return jsonify({'content': content})
-            else:
-                return jsonify({'error': f'Error fetching file: {response.status_code}'}), response.status_code
 
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    return jsonify({'error': "this is private repository"})
+@app.route('/PDF_upload', methods=['POST'])
+def PDF_uplode_route():
+    #  for pdf reader
+    DOCS_FOLDER = 'docs'
+    app.config['DOCS_FOLDER'] = DOCS_FOLDER
+
+    # Check if the request contains a file
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file selected'}), 400
+
+    file = request.files['file']
+
+    # Check if the file has a name
+    if file.filename == '':
+        return jsonify({'error': 'File should have proper name'}), 400
+
+    # Check if the file is a PDF
+    if not file.filename.endswith('.pdf'):
+        return jsonify({'error': 'Invalid file format. Please upload a PDF file'}), 400
+
+    # Delete any existing PDF in the docs folder
+    existing_pdf_path = os.path.join(app.config['DOCS_FOLDER'], 'test.pdf')
+    if os.path.exists(existing_pdf_path):
+        os.remove(existing_pdf_path)
+
+    # Save the new PDF
+    file.save(os.path.join(app.config['DOCS_FOLDER'], 'test.pdf'))
+    
+    return jsonify({'message': 'File uploaded successfully'})
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False,host='0.0.0.0')
