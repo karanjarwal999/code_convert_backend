@@ -72,6 +72,8 @@ def Pdf_Question(api_key,question):
         )
 
         result= qa_chain({"query":question})
+
+        # vectordb.reset()
         return result['result']
     except OpenAIError as e:
         return f'\n\n\n{str(e)}'
